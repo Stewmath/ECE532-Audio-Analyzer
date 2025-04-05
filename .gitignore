@@ -1,0 +1,18 @@
+# Sources
+*.cache/
+*.runs/
+*.sim/
+*.hw/
+*.tmp/
+
+# SDK
+*.o
+*.a
+*.log
+
+# Other
+__pycache__/
+vivado*.jou
+vivado_pid*.str
+webtalk.jou
+.Xil/

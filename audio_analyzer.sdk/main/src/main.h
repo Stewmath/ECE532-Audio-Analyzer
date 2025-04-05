@@ -1,0 +1,31 @@
+/*
+ * main.h
+ *
+ *  Created on: Mar 13, 2025
+ *      Author: matthew
+ */
+
+#ifndef SRC_MAIN_H_
+#define SRC_MAIN_H_
+
+
+// Buttons
+const int BTNC = 0x01;
+const int BTNU = 0x02;
+const int BTNL = 0x04;
+const int BTNR = 0x08;
+const int BTND = 0x10;
+
+// Functions
+void cepstrum_interrupt_handler();
+void audio_input_interrupt_handler();
+void write_number_to_led();
+void video_send_pitch(s16 pitch);
+void adau1761_i2s_read(s16 *left, s16 *right);
+void video_send_sample(s16 sample);
+void cepstrum_send_sample_float(float sample);
+void generate_playback_samples();
+void adau1761_i2s_write(s16 left, s16 right);
+
+
+#endif /* SRC_MAIN_H_ */

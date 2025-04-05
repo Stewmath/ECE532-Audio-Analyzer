@@ -1,0 +1,269 @@
+#include <stdio.h>
+#include <math.h>
+//#include "platform.h"
+//#include "xil_prinf.h"
+#include "xparameters.h"
+#include "xil_printf.h"
+#include "xllfifo.h"
+
+#include "xintc.h"
+#include "iic.h"
+#include "audio.h"
+#include "test_input.h"
+
+#include "main.h"
+#include "intc.h"
+#include "fonts.h"
+#include "mcufont.h"
+
+// Objects representing AXI components we can interface with
+static XIntc sIntc;
+static XIic sIic;
+XLlFifo audio_out_fifo, audio_in_fifo, cepstrum_fifo;
+
+// Button handling
+volatile unsigned int *buttons = (unsigned int*)XPAR_AXI_GPIO_0_BASEADDR;
+unsigned int buttons_pressed;
+unsigned int last_buttons = 0;
+
+// LEDs
+volatile unsigned int *leds = (unsigned int*)(XPAR_AXI_GPIO_0_BASEADDR + 8);
+
+// Interrupt vectors
+const ivt_t ivt[] = {
+		//IIC
+		{XPAR_AXI_INTC_0_AXI_IIC_0_IIC2INTC_IRPT_INTR, (XInterruptHandler)XIic_InterruptHandler, &sIic},
+		{XPAR_AXI_INTC_0_CEPSTRUM_PITCH_DETEC_0_INTERRUPT_INTR, (XInterruptHandler)cepstrum_interrupt_handler, NULL}
+};
+
+#define PERIODSAMPLES 64
+#define MCLK 10000000
+#define SAMPLE_RATE 40000
+
+void cepstrum_interrupt_handler()
+{
+	// Clear interrupt
+	Xil_Out32(XPAR_CEPSTRUM_PITCH_DETEC_0_BASEADDR + 8, 0x01);
+	*leds = Xil_In32(XPAR_CEPSTRUM_PITCH_DETEC_0_BASEADDR);
+	xil_printf("CEPSTRUM INTERRUPT\n");
+}
+
+// Read an audio sample from the mic / line in
+void adau1761_i2s_read(u16 *left, u16 *right)
+{
+	while (XLlFifo_iRxOccupancy(&audio_in_fifo) == 0);
+	XLlFifo_iRxGetLen(&audio_in_fifo);
+	u32 word = XLlFifo_RxGetWord(&audio_in_fifo);
+
+	// Some kind of off-by-one error in our verilog I2S module means that we must ignore the
+	// highest bit of the sample, hence the shift left by one.
+	*left = (word >> 16) << 1;
+	*right = (word & 0xffff) << 1;
+}
+
+// Write an audio sample to the speaker / line out
+void adau1761_i2s_write(u16 left,u16 right) {
+	while ( !XLlFifo_iTxVacancy(&audio_out_fifo) ) {
+		// Printing to serial takes too many cycles
+		//xil_printf("I2S FIFO full. Waiting ... \n\r");
+	}
+	XLlFifo_TxPutWord(&audio_out_fifo, (u32)((left << 16) | (right)));
+	XLlFifo_iTxSetLen(&audio_out_fifo, 4);
+}
+
+// Send sample, as a float encoded IEE754 format
+void cepstrum_send_sample_u32(u32 sample)
+{
+	while ( !XLlFifo_iTxVacancy(&cepstrum_fifo) );
+	XLlFifo_TxPutWord(&cepstrum_fifo, sample);
+	XLlFifo_iTxSetLen(&cepstrum_fifo, 4);
+}
+
+void cepstrum_send_sample_float(float sample)
+{
+	u32 *val = (u32*)&sample;
+	//xil_printf("%d\n", *val);
+	cepstrum_send_sample_u32(*val);
+}
+
+// Send sample data for testing cepstrum
+void send_cepstrum_samples() {
+	for (int i=0; i<cepstrum_input_length; i++)
+	{
+		cepstrum_send_sample_u32(cepstrum_input_floats[i]);
+	}
+}
+
+// This fails to read all 1024 samples for some reason? It usually hangs at a certain point.
+void receive_cepstrum_output() {
+	for (int total=0; total<cepstrum_input_length;)
+	{
+		while (XLlFifo_iRxOccupancy(&cepstrum_fifo) == 0);
+		int recvWords = XLlFifo_iRxGetLen(&cepstrum_fifo) / 4;
+		u32 word = XLlFifo_RxGetWord(&cepstrum_fifo);
+		xil_printf("%u\n", word);
+		total++;
+	}
+}
+
+// Check button input
+void update_buttons()
+{
+	buttons_pressed = (*buttons ^ last_buttons) & *buttons;
+	last_buttons = *buttons;
+}
+
+u16 input_samples[1024];
+
+int main(){
+	int Status;
+
+	*leds = 0xffffffff;
+
+	print("TESTING 123\n");
+
+	/*
+	// Interrupts
+	Status = fnInitInterruptController(&sIntc);
+	if(Status != XST_SUCCESS) {
+		xil_printf("Error initializing interrupts");
+		return XST_FAILURE;
+	}
+
+	// Start the interrupt controller
+	XIntc_MasterEnable(XPAR_INTC_0_BASEADDR);
+	*/
+
+
+	// I2C
+	Status = fnInitIic(&sIic);
+	if(Status != XST_SUCCESS) {
+		xil_printf("Error initializing I2C controller");
+		return XST_FAILURE;
+	}
+
+	xil_printf("%d\n", XIntc_Initialize(&sIntc, XPAR_INTC_0_DEVICE_ID));
+	xil_printf("%d\n", XIntc_Start(&sIntc, XIN_REAL_MODE));
+	XIntc_MasterEnable(XPAR_INTC_0_BASEADDR);
+	microblaze_register_handler((XInterruptHandler)XIntc_InterruptHandler, &sIntc);
+
+	//fnEnableInterrupts(&sIntc, &ivt[0], sizeof(ivt)/sizeof(ivt[0]));
+	XIntc_Enable(&sIntc, XPAR_AXI_INTC_0_CEPSTRUM_PITCH_DETEC_0_INTERRUPT_INTR);
+	XIntc_Enable(&sIntc, XPAR_AXI_INTC_0_AXI_UARTLITE_0_INTERRUPT_INTR);
+	XIntc_Enable(&sIntc, XPAR_AXI_INTC_0_AXI_FIFO_MM_S_0_INTERRUPT_INTR);
+	XIntc_Enable(&sIntc, XPAR_AXI_INTC_0_AXI_FIFO_MM_S_1_INTERRUPT_INTR);
+	XIntc_Enable(&sIntc, XPAR_AXI_INTC_0_AXI_FIFO_MM_S_2_INTERRUPT_INTR);
+
+	XIntc_RegisterHandler(XPAR_INTC_0_BASEADDR,
+			XPAR_AXI_INTC_0_CEPSTRUM_PITCH_DETEC_0_INTERRUPT_INTR,
+			(XInterruptHandler)NULL,
+			0);
+	XIntc_RegisterHandler(XPAR_INTC_0_BASEADDR,
+			XPAR_AXI_INTC_0_AXI_UARTLITE_0_INTERRUPT_INTR,
+			(XInterruptHandler)NULL,
+			0);
+
+	microblaze_enable_interrupts();
+
+
+	// I2S FIFO
+	XLlFifo_Config *pConfig = XLlFfio_LookupConfig(XPAR_AXI_FIFO_MM_S_0_DEVICE_ID);
+	Status = XLlFifo_CfgInitialize(&audio_out_fifo, pConfig, pConfig->BaseAddress);
+	if(XST_SUCCESS != Status) {
+		xil_printf("Error initializing Output FIFO");
+		return XST_FAILURE;
+	}
+	pConfig = XLlFfio_LookupConfig(XPAR_AXI_FIFO_MM_S_1_DEVICE_ID);
+	Status = XLlFifo_CfgInitialize(&audio_in_fifo, pConfig, pConfig->BaseAddress);
+	if(XST_SUCCESS != Status) {
+		xil_printf("Error initializing Input FIFO");
+		return XST_FAILURE;
+	}
+
+	// Cepstrum FIFO
+	pConfig = XLlFfio_LookupConfig(XPAR_AXI_FIFO_MM_S_2_DEVICE_ID);
+	Status = XLlFifo_CfgInitialize(&cepstrum_fifo, pConfig, pConfig->BaseAddress);
+	if(XST_SUCCESS != Status) {
+		xil_printf("Error initializing Cepstrum FIFO");
+		return XST_FAILURE;
+	}
+
+	/*
+	// Check for the Reset value
+	Status = XLlFifo_Status(&audio_out_fifo);
+	XLlFifo_IntClear(&audio_out_fifo,0xffffffff);
+	Status = XLlFifo_Status(&audio_out_fifo);
+	if(Status != 0) {
+		xil_printf("Error initializing Output FIFO (3)");
+		return XST_FAILURE;
+	}
+	*/
+
+	xil_printf("Initialization OK\n");
+
+	//adau1761_init();
+	fnInitAudio();
+	//fnSetHpOutput();
+	fnSetLineOutput();
+	fnSetMicInput();
+	//fnSetLineInput();
+
+	u8 data = 0xff;
+	fnAudioReadFromReg(R0_CLOCK_CONTROL, &data);
+
+	xil_printf("Data: %x\n", data);
+
+    send_cepstrum_samples();
+
+    xil_printf("Wait for completion...\n");
+
+    // TODO: Fix cepstrum module so we know when the output is ready
+    //while (Xil_In32(XPAR_CEPSTRUM_PITCH_DETEC_0_BASEADDR + 4) == 0);
+
+    xil_printf("Completed! Value: %d\n", Xil_In32(XPAR_CEPSTRUM_PITCH_DETEC_0_BASEADDR));
+
+    //receive_cepstrum_output();
+
+    for (;;)
+    {
+    	update_buttons();
+    	if ((buttons_pressed) & BTNL)
+    	{
+    		xil_printf("Recording sample...\n");
+
+			for (int i=0; i<cepstrum_input_length; i++)
+			{
+				u16 l, r;
+				adau1761_i2s_read(&l, &r);
+			}
+
+			// Clear out old data from FIFO?
+			for (int i=0; i<cepstrum_input_length * 3; i++)
+			{
+				u16 l, r;
+				adau1761_i2s_read(&l, &r);
+				input_samples[i] = l;
+			}
+
+			for (int i=0; i<cepstrum_input_length; i++)
+			{
+				cepstrum_send_sample_float((float)((s16)input_samples[i]));
+			}
+
+    		xil_printf("DELAY\n");
+		    xil_printf("Completed! Value: %d\n", Xil_In32(XPAR_CEPSTRUM_PITCH_DETEC_0_BASEADDR));
+		}
+    }
+
+    // Forward audio input to outputk
+    for(;;) {
+    	for (int i=0; i<PERIODSAMPLES; i++)
+    	{
+    		u16 l, r;
+    		adau1761_i2s_read(&l, &r);
+    		adau1761_i2s_write(l, r);
+    	}
+    }
+
+	return 0;
+}

@@ -1,0 +1,176 @@
+#include <stdio.h>
+#include <math.h>
+//#include "platform.h"
+//#include "xil_prinf.h"
+#include "xparameters.h"
+#include "xil_printf.h"
+#include "xllfifo.h"
+
+#include "xintc.h"
+#include "iic.h"
+#include "audio.h"
+
+#include "intc.h"
+#include "fonts.h"
+#include "mcufont.h"
+
+#define MEMSIZE 307200
+volatile unsigned int* membase = (unsigned int*) XPAR_AXI_BRAM_CTRL_0_S_AXI_BASEADDR;
+
+static void pixel_callback(int16_t x, int16_t y, uint8_t count, uint8_t alpha, void *state)
+{
+    while (count--)
+	{
+    	*(membase + (y*640 + x++)) = 0;
+	}
+}
+
+static uint8_t char_callback(int16_t x0, int16_t y0, mf_char character, void *state)
+{
+        return mf_render_character(&mf_rlefont_DejaVuSans12.font, x0, y0, character, &pixel_callback, state);
+}
+
+
+static XIntc sIntc;
+static XIic sIic;
+XLlFifo fifo_i2s;
+
+const ivt_t ivt[] = {
+		//IIC
+		{XPAR_AXI_INTC_0_AXI_IIC_0_IIC2INTC_IRPT_INTR, (XInterruptHandler)XIic_InterruptHandler, &sIic}
+};
+
+void adau1761_init()
+{
+	// Enable clock
+	fnAudioWriteToReg(0x4000, 0x01);
+
+	// SLEWPD=1, ALCPD=1, DECPD=1, SOUTPD=1, INTPD=1, SINPD=1, SPPD=1
+	fnAudioWriteToReg(0x40F9, 0x7F);
+	// CLK1=0, CLK0=1
+	fnAudioWriteToReg(0x40FA, 0x01);
+
+	// MX3LM=1, MX3RM=0, MX3G1=0, MX3G2=0, MX3AUXG=0, MX5G3=3, MX6G3=0, LOUTVOL=63
+	// MX4LM=0, MX4RM=1, MX4G1=0, MX4G2=0, MX4AUXG=0, MX5G4=0, MX6G4=3, ROUTVOL=63
+
+	// LRCLK/LRPOL=falling edge, LRCLK/LRMOD=50%, BCLK/BPOL=falloing edge, LRDEL=1
+	// SPSRS=0, LRMOD=0, BPOL=0, LRPOL=0, CHPF=0, MS=0
+	fnAudioWriteToReg(0x4015, 0x00);
+	// BPF=0, ADTDM=0, DATDM=0, MSBP=0, LRDEL=0
+	fnAudioWriteToReg(0x4016, 0x00);
+	// DAPAIR=0, DAOSR=0, ADOSR=0, CONVSR=0
+	fnAudioWriteToReg(0x4017, 0x00);
+	// MX3RM=0, MX3LM=1, MX3AUXG=0, MX3EN=1
+	fnAudioWriteToReg(0x401C, 0x21);
+	// MX3G2=0, MX3G1=0
+	fnAudioWriteToReg(0x401D, 0x00);
+	// MX4RM=1, MX4LM=0, MX4AUXG=0, MX4EN=1
+	fnAudioWriteToReg(0x401E, 0x41);
+	// MX4G2=0, MX4G1=0
+	fnAudioWriteToReg(0x401F, 0x00);
+	// MX5G4=0, MX5G3=10, MX5EN=1
+	fnAudioWriteToReg(0x4020, 0x05);
+	// MX6G4=01, MX6G3=0, MX6EN=1
+	fnAudioWriteToReg(0x4021, 0x11);
+	// MX7=0, MX7EN=0
+	fnAudioWriteToReg(0x4022, 0x00);
+	// LOUTVOL=63, LOUTM=1, LOMODE=0
+	fnAudioWriteToReg(0x4025, 0xFE);
+	// ROUTVOL=63, ROUTM=1, ROMODE=0
+	fnAudioWriteToReg(0x4026, 0xFE);
+
+	// HPBIAS=0, DACBIAS=0, PBIAS=0, PREN=1, PLEN=1
+	fnAudioWriteToReg(0x4029, 0x03);
+	// DACMONO=0, DACPOL=0,DEMPH=0, DACEN=3
+	fnAudioWriteToReg(0x402A, 0x03);
+
+	// SINRT=1
+	fnAudioWriteToReg(0x40F2, 0x01);
+}
+#define PERIODSAMPLES 128
+
+void adau1761_i2s_write(u16 left,u16 right) {
+	while ( !XLlFifo_iTxVacancy(&fifo_i2s) ) {
+		xil_printf("I2S FIFO full. Waiting ... \n\r");
+	}
+	left = 0;
+	XLlFifo_TxPutWord(&fifo_i2s, ((u32)left<<16) | (u32)right);
+	XLlFifo_iTxSetLen(&fifo_i2s, 4);
+}
+
+
+int main(){
+	int Status;
+
+	print("TESTING 123\n");
+
+	// Interrupts
+	Status = fnInitInterruptController(&sIntc);
+	if(Status != XST_SUCCESS) {
+		xil_printf("Error initializing interrupts");
+		return XST_FAILURE;
+	}
+
+	// I2C
+	Status = fnInitIic(&sIic);
+	if(Status != XST_SUCCESS) {
+		xil_printf("Error initializing I2C controller");
+		return XST_FAILURE;
+	}
+
+	fnEnableInterrupts(&sIntc, &ivt[0], sizeof(ivt)/sizeof(ivt[0]));
+
+	// I2S
+	XLlFifo_Config *pConfig = XLlFfio_LookupConfig(XPAR_AXI_FIFO_MM_S_0_DEVICE_ID);
+	Status = XLlFifo_CfgInitialize(&fifo_i2s, pConfig, pConfig->BaseAddress);
+	if(XST_SUCCESS != Status) {
+		xil_printf("Error initializing I2S controller");
+		return XST_FAILURE;
+	}
+
+	// Check for the Reset value
+	Status = XLlFifo_Status(&fifo_i2s);
+	XLlFifo_IntClear(&fifo_i2s,0xffffffff);
+	Status = XLlFifo_Status(&fifo_i2s);
+	if(Status != 0) {
+		xil_printf("Error initializing I2S controller (3)");
+		return XST_FAILURE;
+	}
+
+
+	xil_printf("Initialization OK\n");
+
+	adau1761_init();
+
+	u8 data = 0xff;
+	fnAudioReadFromReg(R0_CLOCK_CONTROL, &data);
+
+	xil_printf("Data: %x\n", data);    short left[PERIODSAMPLES];
+
+    short right[PERIODSAMPLES];
+    double amp = 16384;
+    for(int i=0;i<PERIODSAMPLES;++i) {
+    	left[i] = (short) (cos((double)i/PERIODSAMPLES*2*M_PI) * amp);
+    	right[i] = (short) (sin((double)i/PERIODSAMPLES*2*M_PI) * amp);
+    }
+
+    for(;;) {
+		for(int i=0;i<PERIODSAMPLES;++i) {
+			adau1761_i2s_write((u16)left[i],(u16)right[i]);
+		}
+    }
+
+	for (int i = 0; i<100000; i++) {
+		*(membase+i) = 0x80008080;
+	}
+
+    mf_render_aligned(
+        &mf_rlefont_DejaVuSans12.font,
+        0, 0,
+        MF_ALIGN_LEFT,
+        "Hello, World!", 13,
+        &char_callback, NULL);
+
+	//cleanup_platform();
+	return 0;
+}

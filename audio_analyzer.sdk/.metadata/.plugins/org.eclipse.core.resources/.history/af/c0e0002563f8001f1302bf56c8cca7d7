@@ -1,0 +1,74 @@
+#include <stdio.h>
+//#include "platform.h"
+//#include "xil_prinf.h"
+#include "xparameters.h"
+#include "xil_printf.h"
+#include "xintc.h"
+#include "iic.h"
+
+#include "intc.h"
+#include "fonts.h"
+#include "mcufont.h"
+
+#define MEMSIZE 307200
+volatile unsigned int* membase = (unsigned int*) XPAR_AXI_BRAM_CTRL_0_S_AXI_BASEADDR;
+
+static void pixel_callback(int16_t x, int16_t y, uint8_t count, uint8_t alpha, void *state)
+{
+    while (count--)
+	{
+    	*(membase + (y*640 + x++)) = 0;
+	}
+}
+
+static uint8_t char_callback(int16_t x0, int16_t y0, mf_char character, void *state)
+{
+        return mf_render_character(&mf_rlefont_DejaVuSans12.font, x0, y0, character, &pixel_callback, state);
+}
+
+
+static XIntc sIntc;
+static XIic sIic;
+
+const ivt_t ivt[] = {
+		//IIC
+		{XPAR_AXI_INTC_0_AXI_IIC_0_IIC2INTC_IRPT_INTR, (XInterruptHandler)XIic_InterruptHandler, &sIic}
+};
+
+
+int main(){
+	int Status;
+
+	print("TESTING 123\n");
+
+	Status = fnInitInterruptController(&sIntc);
+	if(Status != XST_SUCCESS) {
+		xil_printf("Error initializing interrupts");
+		return XST_FAILURE;
+	}
+
+	Status = fnInitIic(&sIic);
+	if(Status != XST_SUCCESS) {
+		xil_printf("Error initializing I2C controller");
+		return XST_FAILURE;
+	}
+
+	//fnEnableInterrupts(&sIntc, &ivt[0], sizeof(ivt)/sizeof(ivt[0]));
+
+
+	xil_printf("Initialization OK\n");
+
+	for (int i = 0; i<100000; i++) {
+		*(membase+i) = 0x80008080;
+	}
+
+    mf_render_aligned(
+        &mf_rlefont_DejaVuSans12.font,
+        0, 0,
+        MF_ALIGN_LEFT,
+        "Hello, World!", 13,
+        &char_callback, NULL);
+
+	//cleanup_platform();
+	return 0;
+}

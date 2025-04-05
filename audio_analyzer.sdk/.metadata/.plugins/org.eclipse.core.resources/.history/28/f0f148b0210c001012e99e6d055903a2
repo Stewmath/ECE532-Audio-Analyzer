@@ -1,0 +1,552 @@
+#include <stdio.h>
+#include <math.h>
+//#include "platform.h"
+//#include "xil_prinf.h"
+#include "xparameters.h"
+#include "xil_printf.h"
+#include "xllfifo.h"
+
+#include "xintc.h"
+#include "iic.h"
+#include "audio.h"
+#include "test_input.h"
+
+#include "main.h"
+#include "intc.h"
+#include "fonts.h"
+#include "mcufont.h"
+
+#define AMPLITUDE 16383  // Max amplitude for 16-bit audio
+#define MCLK 10000000
+#define SAMPLE_RATE 39062 // Sample rate for both mic in and speaker out
+
+#define VOLUME_MULTIPLIER_MAX 256
+
+// Number of samples accepted by cepstrum module for one run
+#define CEPSTRUM_INPUT_SAMPLES 1024
+
+// Threshold for volume to detect pitch (255 = maximum)
+#define VOLUME_THRESHOLD 0x8
+
+// Size of sample "history buffer" to use for calculating volume
+#define VOLUME_BUF_SIZE (SAMPLE_RATE / 10)
+
+
+
+// Objects representing AXI components we can interface with
+static XIntc sIntc;
+static XIic sIic;
+XLlFifo audio_out_fifo, audio_in_fifo, cepstrum_fifo, video_sample_fifo, video_pitch_fifo, keyboard_input_fifo;
+
+// Button handling
+volatile unsigned int *buttons = (unsigned int*)XPAR_AXI_GPIO_0_BASEADDR;
+unsigned int buttons_pressed;
+unsigned int last_buttons = 0;
+
+// LEDs
+volatile unsigned int *leds = (unsigned int*)(XPAR_AXI_GPIO_0_BASEADDR + 8);
+
+// Other
+int video_mode = 0; // 0: Waveform, 1: Pitch graph
+volatile int is_recording = 0;
+
+// Interrupt vectors
+const ivt_t ivt[] = {
+		//IIC
+		{XPAR_AXI_INTC_0_AXI_IIC_0_IIC2INTC_IRPT_INTR, (XInterruptHandler)XIic_InterruptHandler, &sIic},
+		{XPAR_AXI_INTC_0_CEPSTRUM_PITCH_DETEC_0_INTERRUPT_INTR, (XInterruptHandler)cepstrum_interrupt_handler, NULL},
+		{XPAR_AXI_INTC_0_AXI_FIFO_MM_S_1_INTERRUPT_INTR, (XInterruptHandler)audio_input_interrupt_handler, NULL},
+};
+
+// TODO: volatile?
+volatile int cepstrumArray[1000];
+volatile int pitch_playback_index = 0;
+
+s16 cepstrum_buffer_0[CEPSTRUM_INPUT_SAMPLES], cepstrum_buffer_1[CEPSTRUM_INPUT_SAMPLES];
+s16 *cepstrum_input_buffer = cepstrum_buffer_0;
+s16 *cepstrum_send_buffer = cepstrum_buffer_1;
+int cepstrum_input_buffer_pos = 0;
+int cepstrum_send_buffer_ready = 0;
+
+// Amount to multiply input samples by.
+int volume_multiplier = 1;
+
+
+// Variables relating to determining volume over time
+s16 volume_buf[VOLUME_BUF_SIZE];
+int volume_buf_pos = 0;
+int volume_sum = 0;
+int volume = 0;
+
+// Called when the pitch detector finishes processing a batch of samples and has a result
+void cepstrum_interrupt_handler()
+{
+	// Clear the interrupt
+	Xil_Out32(XPAR_CEPSTRUM_PITCH_DETEC_0_BASEADDR + 8, 0x01);
+
+	// Read the frequency
+	int detected_frequency = SAMPLE_RATE / Xil_In32(XPAR_CEPSTRUM_PITCH_DETEC_0_BASEADDR);
+
+	if (volume < VOLUME_THRESHOLD)
+		detected_frequency = 0;
+
+	// Seems like printf doesn't slow things down too much, can keep this for debugging
+	//xil_printf("CEPSTRUM INTERRUPT: Frequency = %d\n", detected_frequency);
+
+
+	// Check video module status bit 1 (finished displaying graph)
+	if (!(Xil_In32(XPAR_PITCH_ANALYZER_VIDEO_0_BASEADDR + 8) & 1))
+	{
+		video_send_pitch(detected_frequency);
+		cepstrumArray[pitch_playback_index++] = detected_frequency;
+	}
+
+	// Show on LEDs
+	//*leds = detected_frequency >> 4;
+}
+
+void swap_cepstrum_buffers()
+{
+	s16 *tmp = cepstrum_input_buffer;
+	cepstrum_input_buffer = cepstrum_send_buffer;
+	cepstrum_send_buffer = tmp;
+	cepstrum_send_buffer_ready = 1;
+	cepstrum_input_buffer_pos = 0;
+}
+
+void clear_cepstrum_buffers()
+{
+	cepstrum_input_buffer_pos = 0;
+	cepstrum_send_buffer_ready = 0;
+}
+
+// Handle all data in the audio input FIFO buffer.
+void process_audio_input(int disable_interrupts)
+{
+	static int processing_audio_input = 0;
+
+	if (disable_interrupts)
+		microblaze_disable_interrupts();
+	if (!processing_audio_input)
+	{
+		processing_audio_input = 1;
+		while (XLlFifo_iRxOccupancy(&audio_in_fifo) > 0)
+		{
+			s16 l, r;
+			adau1761_i2s_read(&l, &r);
+			video_send_sample(l);
+
+			if (is_recording)
+			{
+				cepstrum_input_buffer[cepstrum_input_buffer_pos++] = l;
+				if (cepstrum_input_buffer_pos == CEPSTRUM_INPUT_SAMPLES)
+				{
+					swap_cepstrum_buffers();
+				}
+			}
+
+			volume_sum -= volume_buf[volume_buf_pos];
+			volume_sum += abs(l) / 256;
+			volume_buf[volume_buf_pos] = abs(l) / 256;
+			volume_buf_pos = (volume_buf_pos+1) % VOLUME_BUF_SIZE;
+
+			volume = (volume_sum) / VOLUME_BUF_SIZE;
+			*leds = volume;
+		}
+		processing_audio_input = 0;
+	}
+	if (disable_interrupts)
+		microblaze_enable_interrupts();
+}
+
+// Interrupt occurs when audio input FIFO buffer is nearly full.
+void audio_input_interrupt_handler()
+{
+	//xil_printf("Audio input interrupt!\n");
+	process_audio_input(0);
+	XLlFifo_IntClear(&audio_in_fifo, XLLF_INT_RFPF_MASK);
+}
+
+// Read an audio sample from the mic / line in
+void adau1761_i2s_read(s16 *left, s16 *right)
+{
+	while (XLlFifo_iRxOccupancy(&audio_in_fifo) == 0);
+	XLlFifo_iRxGetLen(&audio_in_fifo);
+	u32 word = XLlFifo_RxGetWord(&audio_in_fifo);
+
+	// Some kind of off-by-one error in our verilog I2S module means that we must ignore the
+	// highest bit of the sample, hence the shift left by one.
+	*left = (word >> 16) << 1;
+	*right = (word & 0xffff) << 1;
+
+	*left *= volume_multiplier;
+	*right *= volume_multiplier;
+}
+
+// Write an audio sample to the speaker / line out
+void adau1761_i2s_write(s16 left,s16 right) {
+	while ( !XLlFifo_iTxVacancy(&audio_out_fifo) ) {
+		// Printing to serial takes too many cycles
+		//xil_printf("I2S FIFO full. Waiting ... \n\r");
+	}
+	XLlFifo_TxPutWord(&audio_out_fifo, (u32)((left << 16) | (right)));
+	XLlFifo_iTxSetLen(&audio_out_fifo, 4);
+}
+
+// Send sample, as a float encoded IEE754 format
+void cepstrum_send_sample_u32(u32 sample)
+{
+	while ( !XLlFifo_iTxVacancy(&cepstrum_fifo) );
+	XLlFifo_TxPutWord(&cepstrum_fifo, sample);
+	XLlFifo_iTxSetLen(&cepstrum_fifo, 4);
+}
+
+void cepstrum_send_sample_float(float sample)
+{
+	u32 *val = (u32*)&sample;
+	//xil_printf("%d\n", *val);
+	cepstrum_send_sample_u32(*val);
+}
+
+// Unlike cepstrum, the video module takes samples as s16 numbers.
+void video_send_sample(s16 sample)
+{
+	while ( !XLlFifo_iTxVacancy(&video_sample_fifo) );
+	XLlFifo_TxPutWord(&video_sample_fifo, sample);
+	XLlFifo_iTxSetLen(&video_sample_fifo, 4);
+}
+
+// Unlike cepstrum, the video module takes samples as s16 numbers.
+void video_send_pitch(s16 pitch)
+{
+	while ( !XLlFifo_iTxVacancy(&video_pitch_fifo) );
+	XLlFifo_TxPutWord(&video_pitch_fifo, pitch);
+	XLlFifo_iTxSetLen(&video_pitch_fifo, 4);
+}
+
+// Send sample data for testing cepstrum
+void send_cepstrum_samples() {
+	for (int i=0; i<CEPSTRUM_INPUT_SAMPLES; i++)
+	{
+		cepstrum_send_sample_u32(cepstrum_input_floats[i]);
+	}
+}
+
+// This fails to read all 1024 samples for some reason? It usually hangs at a certain point.
+void receive_cepstrum_output() {
+	for (int total=0; total<CEPSTRUM_INPUT_SAMPLES;)
+	{
+		while (XLlFifo_iRxOccupancy(&cepstrum_fifo) == 0);
+		//int recvWords = XLlFifo_iRxGetLen(&cepstrum_fifo) / 4;
+		u32 word = XLlFifo_RxGetWord(&cepstrum_fifo);
+		xil_printf("%u\n", word);
+		total++;
+	}
+}
+
+#define NUM_KEYS 0x80
+
+// Array of bools, each entry is "1" if the key is set.
+u8 keysHeld[NUM_KEYS];
+u8 keysHeldLastFrame[NUM_KEYS];
+// Array of keys pressed this frame
+u8 keysPressed[NUM_KEYS];
+
+enum KeyCodes
+{
+	KEY_SPACE = 0x29,
+	KEY_ENTER = 0x5a,
+	KEY_0 = 0x45,
+	KEY_1 = 0x16,
+	KEY_2 = 0x1e,
+	KEY_UP = 0x75,
+	KEY_DOWN = 0x72,
+	KEY_LEFT = 0x6b,
+	KEY_RIGHT = 0x74,
+};
+
+// Check button input
+void update_buttons()
+{
+	// Buttons on board
+	buttons_pressed = (*buttons ^ last_buttons) & *buttons;
+	last_buttons = *buttons;
+
+	// Handle keyboard input
+	while (XLlFifo_iRxOccupancy(&keyboard_input_fifo) != 0)
+	{
+		//int recvWords = XLlFifo_iRxGetLen(&keyboard_input_fifo) / 4;
+		u16 word = XLlFifo_RxGetWord(&keyboard_input_fifo);
+		xil_printf("KEYPRESS: %x\n", word);
+
+		if ((word >> 8) < NUM_KEYS)
+		{
+			// Key down
+			int key = word & 0xff;
+			if (key < NUM_KEYS)
+				keysHeld[key] = 1;
+		}
+		else if ((word & 0xff00) == 0xf000)
+		{
+			// Key released
+			int key = word & 0xff;
+			if (key < NUM_KEYS)
+				keysHeld[key] = 0;
+		}
+	}
+
+	for (int i=0; i<NUM_KEYS; i++)
+	{
+		keysPressed[i] = !keysHeldLastFrame[i] && keysHeld[i];
+		keysHeldLastFrame[i] = keysHeld[i];
+	}
+}
+
+void generate_sine_wave() {
+    static int sample_index = 0;
+
+    for (int j=0;j<=pitch_playback_index;j++) {
+        int frequency = cepstrumArray[j];
+        int period = SAMPLE_RATE/frequency;
+        for (int i = 0; i < SAMPLE_RATE/10; i++) {
+            // Generate sine wave sample
+//            double theta = 2.0 * M_PI * i/period;
+//            int16_t sample = (int16_t)(AMPLITUDE * sin(theta));
+        	int16_t sample;
+        	if (i%period > period/2) {
+        		sample = AMPLITUDE;
+        	}
+
+        		else {
+        	        		sample = -AMPLITUDE;
+        	}
+//            xil_printf("audio sample %d\n", sample);
+
+            // Write to both left and right channels
+            adau1761_i2s_write(sample, sample);
+
+            sample_index++;
+//            if (sample_index >= SAMPLE_RATE) {
+//                sample_index = 0; // Prevent overflow
+//            }
+        }
+    }
+}
+
+u16 input_samples[1024];
+
+int main(){
+	int Status;
+
+	memset(keysHeld, 0, sizeof(keysHeld));
+	memset(keysPressed, 0, sizeof(keysPressed));
+	memset(volume_buf, 0, sizeof(volume_buf));
+
+	*leds = 0xffffffff;
+
+	print("TESTING 123\n");
+
+	// I2C
+	Status = fnInitIic(&sIic);
+	if(Status != XST_SUCCESS) {
+		xil_printf("Error initializing I2C controller");
+		return XST_FAILURE;
+	}
+
+	// Interrupts
+	Status = fnInitInterruptController(&sIntc);
+	if(Status != XST_SUCCESS) {
+		xil_printf("Error initializing interrupts");
+		return XST_FAILURE;
+	}
+
+	// Start the interrupt controller
+	fnEnableInterrupts(&sIntc, &ivt[0], sizeof(ivt)/sizeof(ivt[0]));
+
+
+	// I2S FIFO
+	XLlFifo_Config *pConfig = XLlFfio_LookupConfig(XPAR_AXI_FIFO_MM_S_0_DEVICE_ID);
+	Status = XLlFifo_CfgInitialize(&audio_out_fifo, pConfig, pConfig->BaseAddress);
+	if(XST_SUCCESS != Status) {
+		xil_printf("Error initializing Output FIFO");
+		return XST_FAILURE;
+	}
+	pConfig = XLlFfio_LookupConfig(XPAR_AXI_FIFO_MM_S_1_DEVICE_ID);
+	Status = XLlFifo_CfgInitialize(&audio_in_fifo, pConfig, pConfig->BaseAddress);
+	if(XST_SUCCESS != Status) {
+		xil_printf("Error initializing Input FIFO");
+		return XST_FAILURE;
+	}
+
+	// Cepstrum FIFO
+	pConfig = XLlFfio_LookupConfig(XPAR_AXI_FIFO_MM_S_2_DEVICE_ID);
+	Status = XLlFifo_CfgInitialize(&cepstrum_fifo, pConfig, pConfig->BaseAddress);
+	if(XST_SUCCESS != Status) {
+		xil_printf("Error initializing Cepstrum FIFO");
+		return XST_FAILURE;
+	}
+
+	// Video pitch FIFO
+	pConfig = XLlFfio_LookupConfig(XPAR_AXI_FIFO_MM_S_3_DEVICE_ID);
+	Status = XLlFifo_CfgInitialize(&video_pitch_fifo, pConfig, pConfig->BaseAddress);
+	if(XST_SUCCESS != Status) {
+		xil_printf("Error initializing video pitch FIFO");
+		return XST_FAILURE;
+	}
+
+	// Video sample FIFO
+	pConfig = XLlFfio_LookupConfig(XPAR_AXI_FIFO_MM_S_4_DEVICE_ID);
+	Status = XLlFifo_CfgInitialize(&video_sample_fifo, pConfig, pConfig->BaseAddress);
+	if(XST_SUCCESS != Status) {
+		xil_printf("Error initializing video sample FIFO");
+		return XST_FAILURE;
+	}
+
+	// Keyboard input FIFO
+	pConfig = XLlFfio_LookupConfig(XPAR_AXI_FIFO_MM_S_5_DEVICE_ID);
+	Status = XLlFifo_CfgInitialize(&keyboard_input_fifo, pConfig, pConfig->BaseAddress);
+	if(XST_SUCCESS != Status) {
+		xil_printf("Error initializing keyboard input FIFO");
+		return XST_FAILURE;
+	}
+
+
+	// Enable interrupts for audio input fifo
+	XLlFifo_IntEnable(&audio_in_fifo, XLLF_INT_RFPF_MASK);
+
+	fnInitAudio();
+	//fnSetHpOutput();
+	fnSetLineOutput();
+	//fnSetMicInput();
+	fnSetLineInput();
+
+	xil_printf("Initialization OK\n");
+
+	// Audio sanity check
+	u8 data = 0xff;
+	fnAudioReadFromReg(R0_CLOCK_CONTROL, &data);
+	xil_printf("Data: %x\n", data);
+
+	// Send hardcoded "demo" samples (these are at a sample rate of 44100Hz, different from what the codec is using)
+    //send_cepstrum_samples();
+
+	// This is broken
+    //receive_cepstrum_output();
+
+	// Forward all input audio samples to cepstrum
+	/*
+	for (;;)
+	{
+		u16 l, r;
+		adau1761_i2s_read(&l, &r);
+		cepstrum_send_sample_float((float)(s16)l);
+		if (pitch_playback_index>199) {
+			break;
+		}
+
+	}
+	microblaze_disable_interrupts();
+    generate_sine_wave();
+    */
+
+	// Infinite loop
+	for (;;)
+	{
+		update_buttons();
+
+		process_audio_input(1);
+
+		if (cepstrum_send_buffer_ready)
+		{
+			for (int i=0; i<CEPSTRUM_INPUT_SAMPLES; i++)
+				cepstrum_send_sample_float((float)(s16)cepstrum_input_buffer[i]);
+			cepstrum_send_buffer_ready = 0;
+		}
+
+		// Switch video output mode
+		int pitch_graph_visible = video_mode == 1;
+		if (keysPressed[KEY_SPACE] || ((buttons_pressed) & BTNC))
+		{
+			video_mode ^= 1;
+			Xil_Out32(XPAR_PITCH_ANALYZER_VIDEO_0_BASEADDR, video_mode);
+		}
+
+		// Begin/pause recording
+		if (keysPressed[KEY_ENTER] && pitch_graph_visible)
+		{
+			if (is_recording)
+			{
+				is_recording = 0;
+				Xil_Out32(XPAR_PITCH_ANALYZER_VIDEO_0_BASEADDR + 4, 0); // Ctrl register: Don't show cursor
+			}
+			else
+			{
+				clear_cepstrum_buffers();
+				Xil_Out32(XPAR_PITCH_ANALYZER_VIDEO_0_BASEADDR + 4, 3); // Ctrl register: Reset graph, show cursor
+				is_recording = 1;
+			}
+		}
+
+		// Switching input source
+		if ((buttons_pressed) & BTNL)
+			fnSetLineInput();
+		else if ((buttons_pressed) & BTNR)
+			fnSetMicInput();
+
+		if (keysPressed[KEY_UP])
+		{
+			if (volume_multiplier < VOLUME_MULTIPLIER_MAX)
+				volume_multiplier *= 2;
+			xil_printf("Volume multiplier: %d\n", volume_multiplier);
+		}
+		if (keysPressed[KEY_DOWN])
+		{
+			if (volume_multiplier > 1)
+				volume_multiplier /= 2;
+			xil_printf("Volume multiplier: %d\n", volume_multiplier);
+		}
+	}
+
+
+	// Infinite loop: Wait for BTNL press, then pass 1024 audio samples to cepstrum
+    for (;;)
+    {
+    	update_buttons();
+    	if ((buttons_pressed) & BTNL) // Wait for button pressed
+    	{
+    		xil_printf("Recording sample...\n");
+
+			// Clear out old data from FIFO? (Ideally we should be keeping up with the FIFO data so it doesn't overflow...)
+			for (int i=0; i<CEPSTRUM_INPUT_SAMPLES * 3; i++)
+			{
+				s16 l, r;
+				adau1761_i2s_read(&l, &r);
+			}
+
+    		// Get 1024 samples from microphone
+			for (int i=0; i<CEPSTRUM_INPUT_SAMPLES; i++)
+			{
+				s16 l, r;
+				adau1761_i2s_read(&l, &r);
+				input_samples[i] = l;
+			}
+
+			// Send samples to pitch detector.
+			// It automatically starts once it receives 1024 samples.
+			for (int i=0; i<CEPSTRUM_INPUT_SAMPLES; i++)
+			{
+				// Values must be interpreted as signed before conversion to float
+				cepstrum_send_sample_float((float)((s16)input_samples[i]));
+			}
+		}
+    }
+
+    // Infinite loop: Forward audio input to output
+    for(;;) {
+		s16 l, r;
+		adau1761_i2s_read(&l, &r);
+		adau1761_i2s_write(l, r);
+    }
+
+	return 0;
+}

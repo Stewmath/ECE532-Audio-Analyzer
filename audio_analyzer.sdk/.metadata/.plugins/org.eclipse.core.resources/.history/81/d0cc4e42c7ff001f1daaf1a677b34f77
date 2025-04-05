@@ -1,0 +1,23 @@
+/*
+ * main.h
+ *
+ *  Created on: Mar 13, 2025
+ *      Author: matthew
+ */
+
+#ifndef SRC_MAIN_H_
+#define SRC_MAIN_H_
+
+
+// Buttons
+const int BTNC = 0x01;
+const int BTNU = 0x02;
+const int BTNL = 0x04;
+const int BTNR = 0x08;
+const int BTND = 0x10;
+
+// Functions
+void CepstrumInterruptHandler();
+
+
+#endif /* SRC_MAIN_H_ */

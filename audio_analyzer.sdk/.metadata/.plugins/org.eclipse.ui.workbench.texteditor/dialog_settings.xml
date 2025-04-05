@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<section name="org.eclipse.ui.texteditor.GotoLineAction$GotoLineDialog_dialogBounds">
+		<item value="984" key="DIALOG_X_ORIGIN"/>
+		<item value="561" key="DIALOG_Y_ORIGIN"/>
+	</section>
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
+		<item value="false" key="isRegEx"/>
+		<item value="phase" key="selection"/>
+		<item value="false" key="casesensitive"/>
+		<item value="false" key="incremental"/>
+		<item value="true" key="wrap"/>
+		<item value="false" key="wholeword"/>
+		<list key="findhistory">
+			<item value="phase"/>
+			<item value="leds"/>
+			<item value="keypres"/>
+			<item value="cursor"/>
+			<item value="disable_int"/>
+			<item value="KEY_PAGE_DOWN"/>
+			<item value="KEY_PAGE_UP"/>
+			<item value="sqrt"/>
+		</list>
+		<list key="replacehistory">
+			<item value="KEY_OPEN_SQ_BRACKET"/>
+			<item value="KEY_CLOSE_SQ_BRACKET"/>
+			<item value="pitch_record_index"/>
+			<item value="pitch_playback_index"/>
+			<item value="fnAudioWriteToReg("/>
+			<item value="verbose"/>
+		</list>
+	</section>
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">
+		<item value="295" key="DIALOG_WIDTH"/>
+		<item value="1|Noto Sans|10.0|0|GTK|1|" key="DIALOG_FONT_NAME"/>
+		<item value="421" key="DIALOG_HEIGHT"/>
+		<item value="1436" key="DIALOG_X_ORIGIN"/>
+		<item value="326" key="DIALOG_Y_ORIGIN"/>
+	</section>
+</section>

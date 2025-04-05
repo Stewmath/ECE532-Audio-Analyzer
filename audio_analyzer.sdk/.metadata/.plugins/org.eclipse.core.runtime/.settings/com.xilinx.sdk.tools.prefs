@@ -1,0 +1,13 @@
+com.xilinx.sdk.linkgen.prefs.hdmi\:.bss=mig_7series_0_memaddr
+com.xilinx.sdk.linkgen.prefs.hdmi\:.data=mig_7series_0_memaddr
+com.xilinx.sdk.linkgen.prefs.hdmi\:.rodata=mig_7series_0_memaddr
+com.xilinx.sdk.linkgen.prefs.hdmi\:.sbss=mig_7series_0_memaddr
+com.xilinx.sdk.linkgen.prefs.hdmi\:.sbss2=mig_7series_0_memaddr
+com.xilinx.sdk.linkgen.prefs.hdmi\:.sdata=mig_7series_0_memaddr
+com.xilinx.sdk.linkgen.prefs.hdmi\:.sdata2=mig_7series_0_memaddr
+com.xilinx.sdk.linkgen.prefs.hdmi\:.text=mig_7series_0_memaddr
+com.xilinx.sdk.linkgen.prefs.hdmi\:heap=mig_7series_0_memaddr
+com.xilinx.sdk.linkgen.prefs.hdmi\:heap-size=1024
+com.xilinx.sdk.linkgen.prefs.hdmi\:stack=mig_7series_0_memaddr
+com.xilinx.sdk.linkgen.prefs.hdmi\:stack-size=1024
+eclipse.preferences.version=1

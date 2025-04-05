@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Delete resource &apos;hdmi/src/libschrift&apos;" deleteContents="false" description="Delete resource &apos;hdmi/src/libschrift&apos;" element1="/hdmi/src/libschrift" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1740867661447"/>
+</session>

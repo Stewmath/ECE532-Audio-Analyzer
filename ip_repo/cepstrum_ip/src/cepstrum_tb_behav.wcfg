@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="cepstrum_tb_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="cepstrum_tb" />
+            <top_module name="glbl" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="27772434950fs"></ZoomStartTime>
+      <ZoomEndTime time="75272434951fs"></ZoomEndTime>
+      <Cursor1Time time="65472435000fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="323"></NameColumnWidth>
+      <ValueColumnWidth column_width="106"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="30" />
+   <wvobject type="logic" fp_name="/cepstrum_tb/aclk">
+      <obj_property name="ElementShortName">aclk</obj_property>
+      <obj_property name="ObjectShortName">aclk</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/cepstrum_tb/aresetn">
+      <obj_property name="ElementShortName">aresetn</obj_property>
+      <obj_property name="ObjectShortName">aresetn</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/cepstrum_tb/data_in">
+      <obj_property name="ElementShortName">data_in[31:0]</obj_property>
+      <obj_property name="ObjectShortName">data_in[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/cepstrum_tb/in_valid">
+      <obj_property name="ElementShortName">in_valid</obj_property>
+      <obj_property name="ObjectShortName">in_valid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/cepstrum_tb/in_last">
+      <obj_property name="ElementShortName">in_last</obj_property>
+      <obj_property name="ObjectShortName">in_last</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/cepstrum_tb/in_ready">
+      <obj_property name="ElementShortName">in_ready</obj_property>
+      <obj_property name="ObjectShortName">in_ready</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/cepstrum_tb/out_valid">
+      <obj_property name="ElementShortName">out_valid</obj_property>
+      <obj_property name="ObjectShortName">out_valid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/cepstrum_tb/out_last">
+      <obj_property name="ElementShortName">out_last</obj_property>
+      <obj_property name="ObjectShortName">out_last</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/cepstrum_tb/out_ready">
+      <obj_property name="ElementShortName">out_ready</obj_property>
+      <obj_property name="ObjectShortName">out_ready</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/cepstrum_tb/input_data">
+      <obj_property name="ElementShortName">input_data[1023:0][31:0]</obj_property>
+      <obj_property name="ObjectShortName">input_data[1023:0][31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/cepstrum_tb/i">
+      <obj_property name="ElementShortName">i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">i[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/cepstrum_tb/tb_in/reset_timer">
+      <obj_property name="ElementShortName">reset_timer[2:0]</obj_property>
+      <obj_property name="ObjectShortName">reset_timer[2:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/cepstrum_tb/tb_in/cepstrum_stage">
+      <obj_property name="ElementShortName">cepstrum_stage[2:0]</obj_property>
+      <obj_property name="ObjectShortName">cepstrum_stage[2:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/cepstrum_tb/tb_in/float_abs_in_data">
+      <obj_property name="ElementShortName">float_abs_in_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">float_abs_in_data[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/float_abs_in_ready">
+      <obj_property name="ElementShortName">float_abs_in_ready</obj_property>
+      <obj_property name="ObjectShortName">float_abs_in_ready</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/float_abs_in_valid">
+      <obj_property name="ElementShortName">float_abs_in_valid</obj_property>
+      <obj_property name="ObjectShortName">float_abs_in_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/cepstrum_tb/tb_in/float_abs_out_data">
+      <obj_property name="ElementShortName">float_abs_out_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">float_abs_out_data[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/float_abs_out_ready">
+      <obj_property name="ElementShortName">float_abs_out_ready</obj_property>
+      <obj_property name="ObjectShortName">float_abs_out_ready</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/float_abs_out_valid">
+      <obj_property name="ElementShortName">float_abs_out_valid</obj_property>
+      <obj_property name="ObjectShortName">float_abs_out_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/cepstrum_tb/tb_in/abs_out_counter">
+      <obj_property name="ElementShortName">abs_out_counter[31:0]</obj_property>
+      <obj_property name="ObjectShortName">abs_out_counter[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/cepstrum_tb/tb_in/float_log_in_data">
+      <obj_property name="ElementShortName">float_log_in_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">float_log_in_data[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/float_log_in_ready">
+      <obj_property name="ElementShortName">float_log_in_ready</obj_property>
+      <obj_property name="ObjectShortName">float_log_in_ready</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/float_log_in_valid">
+      <obj_property name="ElementShortName">float_log_in_valid</obj_property>
+      <obj_property name="ObjectShortName">float_log_in_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/cepstrum_tb/tb_in/float_log_out_data">
+      <obj_property name="ElementShortName">float_log_out_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">float_log_out_data[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/float_log_out_ready">
+      <obj_property name="ElementShortName">float_log_out_ready</obj_property>
+      <obj_property name="ObjectShortName">float_log_out_ready</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/float_log_out_valid">
+      <obj_property name="ElementShortName">float_log_out_valid</obj_property>
+      <obj_property name="ObjectShortName">float_log_out_valid</obj_property>
+   </wvobject>
+   <wvobject type="group" fp_name="group603">
+      <obj_property name="label">Float Abs</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/float_abs/s_axis_a_tvalid">
+         <obj_property name="ElementShortName">s_axis_a_tvalid</obj_property>
+         <obj_property name="ObjectShortName">s_axis_a_tvalid</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/float_abs/s_axis_a_tready">
+         <obj_property name="ElementShortName">s_axis_a_tready</obj_property>
+         <obj_property name="ObjectShortName">s_axis_a_tready</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/cepstrum_tb/tb_in/float_abs/s_axis_a_tdata">
+         <obj_property name="ElementShortName">s_axis_a_tdata[31:0]</obj_property>
+         <obj_property name="ObjectShortName">s_axis_a_tdata[31:0]</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/float_abs/m_axis_result_tvalid">
+         <obj_property name="ElementShortName">m_axis_result_tvalid</obj_property>
+         <obj_property name="ObjectShortName">m_axis_result_tvalid</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/float_abs/m_axis_result_tready">
+         <obj_property name="ElementShortName">m_axis_result_tready</obj_property>
+         <obj_property name="ObjectShortName">m_axis_result_tready</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/cepstrum_tb/tb_in/float_abs/m_axis_result_tdata">
+         <obj_property name="ElementShortName">m_axis_result_tdata[31:0]</obj_property>
+         <obj_property name="ObjectShortName">m_axis_result_tdata[31:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="group" fp_name="group596">
+      <obj_property name="label">Float Log</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/float_log/aresetn">
+         <obj_property name="ElementShortName">aresetn</obj_property>
+         <obj_property name="ObjectShortName">aresetn</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/float_log/s_axis_a_tvalid">
+         <obj_property name="ElementShortName">s_axis_a_tvalid</obj_property>
+         <obj_property name="ObjectShortName">s_axis_a_tvalid</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/float_log/s_axis_a_tready">
+         <obj_property name="ElementShortName">s_axis_a_tready</obj_property>
+         <obj_property name="ObjectShortName">s_axis_a_tready</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/cepstrum_tb/tb_in/float_log/s_axis_a_tdata">
+         <obj_property name="ElementShortName">s_axis_a_tdata[31:0]</obj_property>
+         <obj_property name="ObjectShortName">s_axis_a_tdata[31:0]</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/float_log/m_axis_result_tvalid">
+         <obj_property name="ElementShortName">m_axis_result_tvalid</obj_property>
+         <obj_property name="ObjectShortName">m_axis_result_tvalid</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/float_log/m_axis_result_tready">
+         <obj_property name="ElementShortName">m_axis_result_tready</obj_property>
+         <obj_property name="ObjectShortName">m_axis_result_tready</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/cepstrum_tb/tb_in/float_log/m_axis_result_tdata">
+         <obj_property name="ElementShortName">m_axis_result_tdata[31:0]</obj_property>
+         <obj_property name="ObjectShortName">m_axis_result_tdata[31:0]</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="group" fp_name="group48">
+      <obj_property name="label">FFT2</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft2/aclk">
+         <obj_property name="ElementShortName">aclk</obj_property>
+         <obj_property name="ObjectShortName">aclk</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft2/aresetn">
+         <obj_property name="ElementShortName">aresetn</obj_property>
+         <obj_property name="ObjectShortName">aresetn</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/cepstrum_tb/tb_in/fft2/s_axis_config_tdata">
+         <obj_property name="ElementShortName">s_axis_config_tdata[15:0]</obj_property>
+         <obj_property name="ObjectShortName">s_axis_config_tdata[15:0]</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft2/s_axis_config_tvalid">
+         <obj_property name="ElementShortName">s_axis_config_tvalid</obj_property>
+         <obj_property name="ObjectShortName">s_axis_config_tvalid</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft2/s_axis_config_tready">
+         <obj_property name="ElementShortName">s_axis_config_tready</obj_property>
+         <obj_property name="ObjectShortName">s_axis_config_tready</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/cepstrum_tb/tb_in/fft2/s_axis_data_tdata">
+         <obj_property name="ElementShortName">s_axis_data_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">s_axis_data_tdata[63:0]</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft2/s_axis_data_tvalid">
+         <obj_property name="ElementShortName">s_axis_data_tvalid</obj_property>
+         <obj_property name="ObjectShortName">s_axis_data_tvalid</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft2/s_axis_data_tready">
+         <obj_property name="ElementShortName">s_axis_data_tready</obj_property>
+         <obj_property name="ObjectShortName">s_axis_data_tready</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft2/s_axis_data_tlast">
+         <obj_property name="ElementShortName">s_axis_data_tlast</obj_property>
+         <obj_property name="ObjectShortName">s_axis_data_tlast</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/cepstrum_tb/tb_in/fft2/m_axis_data_tdata">
+         <obj_property name="ElementShortName">m_axis_data_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">m_axis_data_tdata[63:0]</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft2/m_axis_data_tvalid">
+         <obj_property name="ElementShortName">m_axis_data_tvalid</obj_property>
+         <obj_property name="ObjectShortName">m_axis_data_tvalid</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft2/m_axis_data_tready">
+         <obj_property name="ElementShortName">m_axis_data_tready</obj_property>
+         <obj_property name="ObjectShortName">m_axis_data_tready</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft2/m_axis_data_tlast">
+         <obj_property name="ElementShortName">m_axis_data_tlast</obj_property>
+         <obj_property name="ObjectShortName">m_axis_data_tlast</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft2/event_frame_started">
+         <obj_property name="ElementShortName">event_frame_started</obj_property>
+         <obj_property name="ObjectShortName">event_frame_started</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft2/event_tlast_unexpected">
+         <obj_property name="ElementShortName">event_tlast_unexpected</obj_property>
+         <obj_property name="ObjectShortName">event_tlast_unexpected</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft2/event_tlast_missing">
+         <obj_property name="ElementShortName">event_tlast_missing</obj_property>
+         <obj_property name="ObjectShortName">event_tlast_missing</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft2/event_status_channel_halt">
+         <obj_property name="ElementShortName">event_status_channel_halt</obj_property>
+         <obj_property name="ObjectShortName">event_status_channel_halt</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft2/event_data_in_channel_halt">
+         <obj_property name="ElementShortName">event_data_in_channel_halt</obj_property>
+         <obj_property name="ObjectShortName">event_data_in_channel_halt</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft2/event_data_out_channel_halt">
+         <obj_property name="ElementShortName">event_data_out_channel_halt</obj_property>
+         <obj_property name="ObjectShortName">event_data_out_channel_halt</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject type="group" fp_name="group68">
+      <obj_property name="label">FFT1</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft1/aclk">
+         <obj_property name="ElementShortName">aclk</obj_property>
+         <obj_property name="ObjectShortName">aclk</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft1/aresetn">
+         <obj_property name="ElementShortName">aresetn</obj_property>
+         <obj_property name="ObjectShortName">aresetn</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/cepstrum_tb/tb_in/fft1/s_axis_config_tdata">
+         <obj_property name="ElementShortName">s_axis_config_tdata[15:0]</obj_property>
+         <obj_property name="ObjectShortName">s_axis_config_tdata[15:0]</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft1/s_axis_config_tvalid">
+         <obj_property name="ElementShortName">s_axis_config_tvalid</obj_property>
+         <obj_property name="ObjectShortName">s_axis_config_tvalid</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft1/s_axis_config_tready">
+         <obj_property name="ElementShortName">s_axis_config_tready</obj_property>
+         <obj_property name="ObjectShortName">s_axis_config_tready</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/cepstrum_tb/tb_in/fft1/s_axis_data_tdata">
+         <obj_property name="ElementShortName">s_axis_data_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">s_axis_data_tdata[63:0]</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft1/s_axis_data_tvalid">
+         <obj_property name="ElementShortName">s_axis_data_tvalid</obj_property>
+         <obj_property name="ObjectShortName">s_axis_data_tvalid</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft1/s_axis_data_tready">
+         <obj_property name="ElementShortName">s_axis_data_tready</obj_property>
+         <obj_property name="ObjectShortName">s_axis_data_tready</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft1/s_axis_data_tlast">
+         <obj_property name="ElementShortName">s_axis_data_tlast</obj_property>
+         <obj_property name="ObjectShortName">s_axis_data_tlast</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/cepstrum_tb/tb_in/fft1/m_axis_data_tdata">
+         <obj_property name="ElementShortName">m_axis_data_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">m_axis_data_tdata[63:0]</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft1/m_axis_data_tvalid">
+         <obj_property name="ElementShortName">m_axis_data_tvalid</obj_property>
+         <obj_property name="ObjectShortName">m_axis_data_tvalid</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft1/m_axis_data_tready">
+         <obj_property name="ElementShortName">m_axis_data_tready</obj_property>
+         <obj_property name="ObjectShortName">m_axis_data_tready</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft1/m_axis_data_tlast">
+         <obj_property name="ElementShortName">m_axis_data_tlast</obj_property>
+         <obj_property name="ObjectShortName">m_axis_data_tlast</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft1/event_frame_started">
+         <obj_property name="ElementShortName">event_frame_started</obj_property>
+         <obj_property name="ObjectShortName">event_frame_started</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft1/event_tlast_unexpected">
+         <obj_property name="ElementShortName">event_tlast_unexpected</obj_property>
+         <obj_property name="ObjectShortName">event_tlast_unexpected</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft1/event_tlast_missing">
+         <obj_property name="ElementShortName">event_tlast_missing</obj_property>
+         <obj_property name="ObjectShortName">event_tlast_missing</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft1/event_status_channel_halt">
+         <obj_property name="ElementShortName">event_status_channel_halt</obj_property>
+         <obj_property name="ObjectShortName">event_status_channel_halt</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft1/event_data_in_channel_halt">
+         <obj_property name="ElementShortName">event_data_in_channel_halt</obj_property>
+         <obj_property name="ObjectShortName">event_data_in_channel_halt</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/cepstrum_tb/tb_in/fft1/event_data_out_channel_halt">
+         <obj_property name="ElementShortName">event_data_out_channel_halt</obj_property>
+         <obj_property name="ObjectShortName">event_data_out_channel_halt</obj_property>
+      </wvobject>
+   </wvobject>
+</wave_config>

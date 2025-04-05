@@ -1,0 +1,14 @@
+/*
+ * main.h
+ *
+ *  Created on: Mar 3, 2025
+ *      Author: matthew
+ */
+
+#ifndef SRC_MAIN_H_
+#define SRC_MAIN_H_
+
+#define INTC_HANDLER	XIntc_InterruptHandler
+
+
+#endif /* SRC_MAIN_H_ */

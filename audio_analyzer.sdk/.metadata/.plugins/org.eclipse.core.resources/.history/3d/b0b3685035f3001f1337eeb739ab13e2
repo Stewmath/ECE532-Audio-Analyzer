@@ -1,0 +1,14 @@
+#include <stdio.h>
+//#include "platform.h"
+//#include "xil_prinf.h"
+#include "xparameters.h"
+
+#define MEMSIZE 32
+volatile unsigned int* membase = (unsigned int*) XPAR_AXI_BRAM_CTRL_O_S_AXI_BASEADDR;
+
+int main(){
+	for (int i = 0; i<307200; i++) {
+		*(membase+i) = i+1;
+	}
+	return 0;
+}
