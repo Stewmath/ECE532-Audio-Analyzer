@@ -8,6 +8,8 @@ This was our course project for ECE532 - Digital Systems Design.
 
 See it in action: https://www.youtube.com/watch?v=KJVU2bFoxcI
 
+For technical details, see our [final report](doc/Final%20Group%20Report.pdf).
+
 ## Authors
 
 * Matthew Stewart ([Github](https://github.com/Stewmath))
@@ -30,6 +32,9 @@ Spectrogram view:
 ![](screenshots/spectrogram.png)
 
 ## Usage
+
+The SDK files have a pre-generated bitstream you can use. The simplest way to test the project would
+be to load Vivado, click on "Launch SDK", and program the board in the SDK.
 
 Connect the following peripherals to the Nexys Video board:
 
