@@ -80,6 +80,8 @@ audio_analyzer
 │   	├── imports
 │   	└── ip_repo // Generated files from IP blocks
 ├── audio_analyzer.xpr
+├── doc
+│   └── Final Group Report.pdf
 ├── examples
 │   └── video_testbench.sv
 ├── ip_repo
@@ -96,6 +98,7 @@ Top-level folders:
 * 3rd\_party\_files: Contains the original version of the I2S module that we found online.
 * audio\_analyzer.sdk: Contains C source files for the microblaze.
 * audio\_analyzer.srcs: Contains the vivado project, consisting mostly of one large block design which uses custom IP blocks from the ip\_repo directory.
+* doc: Documentation (contains our final report)
 * examples: Contains a standalone video testbench, based on the one in our “video\_system” submodule, that can be used to help develop verilog-based graphics.
 * ip\_repo: Sources for the IP blocks that are imported into the main project. All of our custom verilog code is here, along with the 3rd-party code we used.
 * python\_tools: Miscellaneous python scripts used for research and to support development of the verilog modules.
