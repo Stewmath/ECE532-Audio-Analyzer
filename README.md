@@ -15,6 +15,20 @@ See it in action: https://www.youtube.com/watch?v=KJVU2bFoxcI
 * Adam Pietrewicz ([Github](https://github.com/pietrea2))
 * Peishuo Cai ([Github](https://github.com/PeishuoCai))
 
+## Screenshots
+
+Waveform view:
+
+![](screenshots/waveform.png)
+
+Pitch graph:
+
+![](screenshots/pitch_graph.png)
+
+Spectrogram view:
+
+![](screenshots/spectrogram.png)
+
 ## Usage
 
 Connect the following peripherals to the Nexys Video board:
@@ -24,6 +38,7 @@ Connect the following peripherals to the Nexys Video board:
     * A mic (to mic input jack), or
     * (Preferably) A direct connection to the line-in jack
 * An audio output device connected to the headphone jack
+* An HDMI monitor
 
 Keyboard controls:
 * 1: Switch to waveform display
